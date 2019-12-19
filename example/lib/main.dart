@@ -19,15 +19,45 @@ class _MyAppState extends State<MyApp> {
     super.initState();
   }
 
+  Widget innerWidgetBuilder(
+      int outerIndex, BuildContext context, int innerindex) {
+    return Container(
+        height: 30,
+        color:
+            ((outerIndex + innerindex) % 2 == 0) ? Colors.blue : Colors.yellow);
+  }
+
+  Widget outerWidgetBuilder(BuildContext context, int index, param,
+      InnerListBuilder innerWidgetFunction) {
+    return Column(
+      children: <Widget>[
+        Container(
+          height: 100,
+          color: Colors.red,
+        ),
+        Container(
+          height: 300,
+          child: innerWidgetFunction(index, param),
+        )
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final p = InnerListParam(
+      itemBuilder: innerWidgetBuilder,
+      physics: InnerListPhysics.Bouncing,
+      itemCount: 20,
+    );
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: ListInAList.doubleBuilder(
+          param: p,
+          outerBuilder: outerWidgetBuilder,
         ),
       ),
     );

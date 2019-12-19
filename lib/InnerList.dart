@@ -47,16 +47,19 @@ class InnerList extends ListView {
     bool shrinkWrap = false,
     EdgeInsetsGeometry padding,
     itemExtent,
+    int itemCount,
     bool addAutomaticKeepAlives = true,
     bool addRepaintBoundaries = true,
     bool addSemanticIndexes = true,
     double cacheExtent,
-    List<Widget> children = const <Widget>[],
     int semanticChildCount,
+    
     DragStartBehavior dragStartBehavior = DragStartBehavior.start,
 }) : super.builder(
+
     key: key,
     itemBuilder: itemBuilder,
+    itemCount: itemCount,
     scrollDirection: scrollDirection,
     reverse: reverse,
     controller: controller,
