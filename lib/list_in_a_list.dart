@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:list_in_a_list/InnerControllers.dart';
-import 'package:list_in_a_list/InnerList.dart';
 import 'package:list_in_a_list/outerControllers.dart';
 
 typedef InnerListWidgetBuilder = Widget Function(
@@ -59,16 +58,16 @@ class ListInAList extends ListView {
   //                     outerIndex, p, controller.moveMe),
   //               ));
 
-  static InnerList innerListChildren(
+  static ListView innerListChildren(
           int outerIndex, InnerListParam p, innerListener) =>
-      InnerList(
+      ListView(
         children: p.children(outerIndex),
         controller: p.controller,
         physics: innerphysics(p.physics, innerListener),
       );
-  static InnerList innerListBuilder(
+  static ListView innerListBuilder(
           int outerIndex, InnerListParam p, innerListener) =>
-      InnerList.builder(
+      ListView.builder(
           itemBuilder: (context, index) =>
               p.itemBuilder(outerIndex, context, index),
           controller: p.controller,
