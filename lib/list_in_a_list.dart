@@ -1,13 +1,18 @@
-import 'dart:async';
+import 'package:flutter/material.dart';
 
-import 'package:flutter/services.dart';
+/// ListInAList is a class that makes it easy to create a list in a list!
+class ListInAList extends ListView{
+  ListInAList(): super();
+  ListInAList.builder({IndexedWidgetBuilder itemBuilder}): super.builder(itemBuilder: itemBuilder);
+  ListInAList.doubleBuilder();
+  ListInAList.builderAndChildren();
+  ListInAList.childrenAndbuilder(); 
+  ListInAList.doublechildren();
 
-class ListInAList {
-  static const MethodChannel _channel =
-      const MethodChannel('list_in_a_list');
+}
+class ListInAListMixin {} 
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
-  }
+class AnimatedListInAList extends AnimatedList with ListInAListMixin {
+  AnimatedListInAList({AnimatedListItemBuilder itemBuilder}): super(itemBuilder: itemBuilder);
+  AnimatedListInAList.doubleBuilder();
 }
