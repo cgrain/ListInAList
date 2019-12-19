@@ -1,9 +1,5 @@
 import 'package:flutter/cupertino.dart';
 
-/// I do not need to control 
-class _InnerListController extends ScrollController { 
-  
-}
 /// Obviously, one would expect that a mixin Should work much and much better, because we are copying code. However, 
 /// I do not know how to design that in such a way, 
 /// So I put this here so everybody stays we reminded we could one day do that better.
