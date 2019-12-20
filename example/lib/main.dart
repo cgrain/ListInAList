@@ -58,6 +58,11 @@ class _MyAppState extends State<MyApp> {
         body: ListInAList.doubleBuilder(
           param: p,
           outerBuilder: outerWidgetBuilder,
+          velocityFunc: (position, velocity) { 
+            print(position.pixels - position.maxScrollExtent);
+            print('Vel: ${velocity/2.0}');
+            return (position.pixels - position.maxScrollExtent) + velocity/2.0;
+          },
         ),
       ),
     );
