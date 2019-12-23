@@ -4,7 +4,8 @@ import 'package:list_in_a_list/InnerControllers.dart';
 typedef InnerListWidgetBuilder = Widget Function(
     int outerIndex, BuildContext context, int innerIndex);
 typedef InnerListChildrenBuilder = List<Widget> Function(int outerIndex);
-typedef InnerListBuilder = Widget Function(int index, InnerListParam p);
+typedef InnerListBuilder = Widget Function(
+    BuildContext context, int index, InnerListParam p);
 typedef OuterWidgetBuilder = Widget Function(BuildContext context, int index,
     InnerListParam p, InnerListBuilder innerWidget);
 typedef VelocityCalculator = double Function(
@@ -19,11 +20,11 @@ enum InnerListPhysics {
 }
 
 class InnerListParam {
-   InnerListWidgetBuilder itemBuilder;
-   InnerListChildrenBuilder children;
-   ScrollController controller;
-   InnerListPhysics physics;
-   int itemCount;
+  InnerListWidgetBuilder itemBuilder;
+  InnerListChildrenBuilder children;
+  ScrollController controller;
+  InnerListPhysics physics;
+  int itemCount;
   InnerListParam(
       {this.physics,
       this.itemBuilder,
@@ -33,14 +34,18 @@ class InnerListParam {
 }
 
 class AnimatedListParam extends InnerListParam {
-   AnimatedListInnerBuilder animatedItemBuilder;
+  AnimatedListInnerBuilder animatedItemBuilder;
   AnimatedListParam({
     this.animatedItemBuilder,
     physics,
     children,
     controller,
-    itemCount, 
-  }) : super(physics: physics, children: children, controller: controller, itemCount: itemCount);
+    itemCount,
+  }) : super(
+            physics: physics,
+            children: children,
+            controller: controller,
+            itemCount: itemCount);
 }
 
 /// ListInAList is a class that makes it easy to create a list in a list!
@@ -55,7 +60,7 @@ class ListInAList extends ListView {
       @required VelocityCalculator velocityFunc}) {
     final controller = ScrollController();
 
-    final innerBuilder = (outerIndex, p) =>
+    final innerBuilder = (context, outerIndex, p) =>
         ListInAList.innerListBuilder(outerIndex, p, (position, velocity) {
           ScrollPositionWithSingleContext pos = controller.position;
           // Cast it to remove squiggles. Yeah this way will error when this cease to be the truth. It is fair though!
@@ -94,17 +99,31 @@ class ListInAList extends ListView {
 }
 
 class AnimatedListInAList extends AnimatedList {
+  /// When Dart updates, Update this to se we can use a typedef! i.e.
+  /// typedef MapOfKeys = Map<int,GlobalKey<AnimatedListState>>;
+  final Map<int,GlobalKey<AnimatedListState>> keys;
   AnimatedListInAList(
-      {AnimatedListItemBuilder itemBuilder, ScrollController controller})
-      : super(itemBuilder: itemBuilder, controller: controller);
+      {AnimatedListItemBuilder itemBuilder,
+      ScrollController controller,
+      int initialItemCount,
+      Map keys})
+      : keys = keys ?? Map(),
+        super(
+            itemBuilder: itemBuilder,
+            controller: controller,
+            initialItemCount: initialItemCount);
   factory AnimatedListInAList.doubleBuilder({
-    AnimatedListParam param,
+    @required AnimatedListParam param,
     @required AnimatedOuterBuilder outerBuilder,
     @required VelocityCalculator velFunc,
+    Map<int,GlobalKey<AnimatedListState>> keys,
+    initialCount,
   }) {
+    param = param ?? AnimatedListParam();
+    keys = keys ?? Map<int, GlobalKey<AnimatedListState>>();
     final controller = ScrollController();
-    final innerBuilder = (outerIndex, param) =>
-        AnimatedListInAList.innerListBuilder(outerIndex, param,
+    final innerBuilder = (context, outerIndex, param) =>
+        AnimatedListInAList.innerListBuilder(outerIndex, param,keys,
             (position, velocity) {
           ScrollPositionWithSingleContext pos = controller.position;
           double outerVel = velFunc(position, velocity);
@@ -112,19 +131,23 @@ class AnimatedListInAList extends AnimatedList {
         });
     AnimatedListItemBuilder itemBuilder = (context, index, animation) =>
         outerBuilder(context, index, param, innerBuilder, animation);
+
     return AnimatedListInAList(
       itemBuilder: itemBuilder,
       controller: controller,
+      initialItemCount: 5,
+      keys: keys,
     );
   }
 
   static AnimatedList innerListBuilder(
-          int outerIndex, AnimatedListParam p, innerListener) =>
-      AnimatedList(
+      int outerIndex, AnimatedListParam p, Map<int, dynamic> keys,innerListener) {
+        final key = keys.putIfAbsent(outerIndex, () => GlobalKey<AnimatedListState>() );
+    return AnimatedList(key: key,
         itemBuilder: (BuildContext context, int index, Animation animation) =>
             p.animatedItemBuilder(outerIndex, context, index, animation),
         controller: p.controller ?? ScrollController(),
         physics: ListInAList.innerphysics(p.physics, innerListener),
-        initialItemCount: p.itemCount,
-      );
+        initialItemCount: p.itemCount);
+  }
 }
