@@ -18,6 +18,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
   }
+  double velocityFunc(ScrollMetrics position, double innerVel) { 
+    return (position.pixels - position.maxScrollExtent) + innerVel/2.0;
+  }
 
   Widget innerWidgetBuilder(
       int outerIndex, BuildContext context, int innerindex) {
@@ -45,6 +48,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    return buildAnimated(context);
     final p = InnerListParam(
       itemBuilder: innerWidgetBuilder,
       physics: InnerListPhysics.Bouncing,
@@ -58,13 +62,46 @@ class _MyAppState extends State<MyApp> {
         body: ListInAList.doubleBuilder(
           param: p,
           outerBuilder: outerWidgetBuilder,
-          velocityFunc: (position, velocity) { 
-            print(position.pixels - position.maxScrollExtent);
-            print('Vel: ${velocity/2.0}');
-            return (position.pixels - position.maxScrollExtent) + velocity/2.0;
-          },
+          velocityFunc: velocityFunc,
         ),
       ),
     );
+  }
+  Widget buildAnimated(BuildContext context) { 
+    final p = AnimatedListParam( animatedItemBuilder: innerAnimatedWidgetBuilder,
+    physics: InnerListPhysics.Bouncing, itemCount: 5);
+    return MaterialApp(
+    home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Plugin example app'),
+        ),
+        body: AnimatedListInAList.doubleBuilder(
+          outerBuilder: outerAnimatedWidget,
+          velFunc: velocityFunc,
+        ),
+    ));
+  }
+  Widget innerAnimatedWidgetBuilder(int outerIndex, BuildContext context, int innerIndex, Animation animation) { 
+    return innerWidgetBuilder(outerIndex, context, innerIndex);
+
+  }
+  Widget outerAnimatedWidget(BuildContext context, int outerIndex, AnimatedListParam p, Function innerBuilder, Animation animation ) { 
+    return Column(
+      children: <Widget>[
+        Container(
+          height: 100,
+          color: Colors.red,
+        ),
+        Container(
+          height: 300,
+          color: Colors.green,
+    child: DraggableScrollableSheet( 
+      initialChildSize: 0.3,
+      maxChildSize: 0.8,
+      builder: (context, scrollController) { 
+        p.controller = scrollController;
+        return innerBuilder(context, p);
+    },
+    ))]);
   }
 }

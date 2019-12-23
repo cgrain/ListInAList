@@ -8,7 +8,7 @@ abstract class _InnerListPhysicsMixin extends ScrollPhysics {
 
   _InnerListPhysicsMixin(this.physicsListener);
 
-}
+} 
 
 class BouncingInnerListPhysics extends BouncingScrollPhysics { 
   final void Function(ScrollMetrics position, double velocity) physicsListener;

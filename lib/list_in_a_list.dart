@@ -7,19 +7,23 @@ typedef InnerListChildrenBuilder = List<Widget> Function(int outerIndex);
 typedef InnerListBuilder = Widget Function(int index, InnerListParam p);
 typedef OuterWidgetBuilder = Widget Function(BuildContext context, int index,
     InnerListParam p, InnerListBuilder innerWidget);
-  typedef VelocityCalculator = double Function(ScrollMetrics position, double innerVelocity); 
-
+typedef VelocityCalculator = double Function(
+    ScrollMetrics position, double innerVelocity);
+typedef AnimatedListInnerBuilder = Widget Function(
+    int outerIndex, BuildContext context, int index, Animation animation);
+typedef AnimatedOuterBuilder = Widget Function(BuildContext context, int index,
+    AnimatedListParam p, InnerListBuilder innerWidget, Animation animation);
 enum InnerListPhysics {
   Bouncing,
   Clamping,
 }
 
 class InnerListParam {
-  final InnerListWidgetBuilder itemBuilder;
-  final InnerListChildrenBuilder children;
-  final ScrollController controller;
-  final InnerListPhysics physics;
-  final int itemCount;
+   InnerListWidgetBuilder itemBuilder;
+   InnerListChildrenBuilder children;
+   ScrollController controller;
+   InnerListPhysics physics;
+   int itemCount;
   InnerListParam(
       {this.physics,
       this.itemBuilder,
@@ -28,26 +32,35 @@ class InnerListParam {
       this.itemCount});
 }
 
+class AnimatedListParam extends InnerListParam {
+   AnimatedListInnerBuilder animatedItemBuilder;
+  AnimatedListParam({
+    this.animatedItemBuilder,
+    physics,
+    children,
+    controller,
+    itemCount, 
+  }) : super(physics: physics, children: children, controller: controller, itemCount: itemCount);
+}
+
 /// ListInAList is a class that makes it easy to create a list in a list!
 class ListInAList extends ListView {
-
-
-
   ListInAList.builder(
       {IndexedWidgetBuilder itemBuilder, ScrollController controller})
       : super.builder(itemBuilder: itemBuilder, controller: controller);
 
-
   factory ListInAList.doubleBuilder(
-      {InnerListParam param, OuterWidgetBuilder outerBuilder, @required VelocityCalculator velocityFunc}) {
+      {InnerListParam param,
+      OuterWidgetBuilder outerBuilder,
+      @required VelocityCalculator velocityFunc}) {
     final controller = ScrollController();
-    
+
     final innerBuilder = (outerIndex, p) =>
         ListInAList.innerListBuilder(outerIndex, p, (position, velocity) {
-          ScrollPositionWithSingleContext pos = controller.position; 
+          ScrollPositionWithSingleContext pos = controller.position;
           // Cast it to remove squiggles. Yeah this way will error when this cease to be the truth. It is fair though!
-          double outerVel = velocityFunc(position, velocity); 
-           pos.goBallistic(outerVel);
+          double outerVel = velocityFunc(position, velocity);
+          if (controller.hasClients) pos.goBallistic(outerVel);
         });
     final itemBuilder =
         (context, index) => outerBuilder(context, index, param, innerBuilder);
@@ -56,7 +69,6 @@ class ListInAList extends ListView {
       controller: controller,
     );
   }
-
 
   static ListView innerListChildren(
           int outerIndex, InnerListParam p, innerListener) =>
@@ -81,10 +93,38 @@ class ListInAList extends ListView {
   }
 }
 
-class ListInAListMixin {}
+class AnimatedListInAList extends AnimatedList {
+  AnimatedListInAList(
+      {AnimatedListItemBuilder itemBuilder, ScrollController controller})
+      : super(itemBuilder: itemBuilder, controller: controller);
+  factory AnimatedListInAList.doubleBuilder({
+    AnimatedListParam param,
+    @required AnimatedOuterBuilder outerBuilder,
+    @required VelocityCalculator velFunc,
+  }) {
+    final controller = ScrollController();
+    final innerBuilder = (outerIndex, param) =>
+        AnimatedListInAList.innerListBuilder(outerIndex, param,
+            (position, velocity) {
+          ScrollPositionWithSingleContext pos = controller.position;
+          double outerVel = velFunc(position, velocity);
+          if (controller.hasClients) pos.goBallistic(outerVel);
+        });
+    AnimatedListItemBuilder itemBuilder = (context, index, animation) =>
+        outerBuilder(context, index, param, innerBuilder, animation);
+    return AnimatedListInAList(
+      itemBuilder: itemBuilder,
+      controller: controller,
+    );
+  }
 
-class AnimatedListInAList extends AnimatedList with ListInAListMixin {
-  AnimatedListInAList({AnimatedListItemBuilder itemBuilder})
-      : super(itemBuilder: itemBuilder);
-  AnimatedListInAList.doubleBuilder();
+  static AnimatedList innerListBuilder(
+          int outerIndex, AnimatedListParam p, innerListener) =>
+      AnimatedList(
+        itemBuilder: (BuildContext context, int index, Animation animation) =>
+            p.animatedItemBuilder(outerIndex, context, index, animation),
+        controller: p.controller ?? ScrollController(),
+        physics: ListInAList.innerphysics(p.physics, innerListener),
+        initialItemCount: p.itemCount,
+      );
 }
