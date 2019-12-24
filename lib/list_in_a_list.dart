@@ -25,6 +25,10 @@ class InnerListParam {
   ScrollController controller;
   InnerListPhysics physics;
   int itemCount;
+  /// [innerKey] is null in initialization. It makes no sense to create it at initialization because [this] is used  
+  /// for multiple listViews. Therefore, it should be managed by the outerWidget and potentially edited by the [InnerListBuilder]
+  GlobalKey innerKey;
+
   InnerListParam(
       {this.physics,
       this.itemBuilder,
@@ -129,9 +133,11 @@ class AnimatedListInAList extends AnimatedList {
           double outerVel = velFunc(position, velocity);
           if (controller.hasClients) pos.goBallistic(outerVel);
         });
-    AnimatedListItemBuilder itemBuilder = (context, index, animation) =>
-        outerBuilder(context, index, param, innerBuilder, animation);
-
+    AnimatedListItemBuilder itemBuilder = (context, index, animation) {
+        param.innerKey = keys.putIfAbsent(index, () => GlobalKey<AnimatedListState>() );
+        
+        return outerBuilder(context, index, param, innerBuilder, animation);
+    };
     return AnimatedListInAList(
       itemBuilder: itemBuilder,
       controller: controller,
@@ -142,8 +148,8 @@ class AnimatedListInAList extends AnimatedList {
 
   static AnimatedList innerListBuilder(
       int outerIndex, AnimatedListParam p, Map<int, dynamic> keys,innerListener) {
-        final key = keys.putIfAbsent(outerIndex, () => GlobalKey<AnimatedListState>() );
-    return AnimatedList(key: key,
+        keys[outerIndex] = p.innerKey;
+    return AnimatedList(key: p.innerKey,
         itemBuilder: (BuildContext context, int index, Animation animation) =>
             p.animatedItemBuilder(outerIndex, context, index, animation),
         controller: p.controller ?? ScrollController(),
