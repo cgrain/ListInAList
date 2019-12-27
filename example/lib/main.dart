@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:list_in_a_list/list_in_a_list.dart';
-import 'package:list_in_a_list/OuterList.dart';
-import 'package:list_in_a_list/InnerList.dart';
+import 'package:list_in_a_list/listInAList.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,6 +10,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   List widgetList;
+  final innerKey = GlobalKey<AnimatedListState>();
   @override
   void initState() {
     super.initState();
@@ -29,32 +28,29 @@ class _MyAppState extends State<MyApp> {
             appBar: AppBar(
               title: const Text('Animated test app'),
             ),
-            body: Column(
-              children: <Widget>[
-                Container(
-                    height: 100,
-                    color: Colors.grey,
-                    child: Center(
-                      child: FlatButton(
-                        color: Colors.white60,
-                        child: Text('New Item'),
-                        onPressed: () {
-                          //final firstKey = keys[0];
-                          //widgetList.removeAt(2);
-                          //firstKey.currentState.removeItem(2, (_, _test) { return Container(height:30,color: Colors.white);} );
-                          setState(() {
-                            
-                          });
-                        },
-                      ),
-                    )),
-                Expanded(
-            child: OuterList.builder(itemBuilder: outerItembuilder))
-            ])
-            ));
+            body: Column(children: <Widget>[
+              Container(
+                  height: 100,
+                  color: Colors.grey,
+                  child: Center(
+                    child: FlatButton(
+                      color: Colors.white60,
+                      child: Text('New Item'),
+                      onPressed: () {
+                        widgetList.removeAt(2);
+                        innerKey.currentState.removeItem(2, (_, _test) { return Container(height:30,color: Colors.white);} );
+                      },
+                    ),
+                  )),
+              Expanded(
+                  child: OuterList.builder(
+                      itemBuilder: outerItembuilder,
+                      velocityFunc: (_, vel) => vel))
+            ])));
   }
 
   Widget outerItembuilder(context, index, animation) {
+    
     return Column(children: <Widget>[
       Container(
         height: 100,
@@ -65,6 +61,7 @@ class _MyAppState extends State<MyApp> {
         color: Colors.green,
         child: AnimatedInnerList(
           context: context,
+          key: (index == 0)? innerKey : null,
           itemBuilder: innerItembuilder,
           initialItemCount: 15,
         ),

@@ -1,5 +1,5 @@
-## 0.0.1+3 
-Make it more useful to implement. 
+## 0.0.2 
+Completely revamp and use ScrollNotifications because that is actually the easy way to do it. 
 
 ## 0.0.1+2
 Hotfix #2 
