@@ -3,12 +3,12 @@ import 'package:flutter/cupertino.dart';
 /// Obviously, one would expect that a mixin Should work much and much better, because we are copying code. However, 
 /// I do not know how to design that in such a way, 
 /// So I put this here so everybody stays we reminded we could one day do that better.
-abstract class _InnerListPhysicsMixin extends ScrollPhysics { 
-  final void Function(ScrollMetrics, double) physicsListener;
+// abstract class _InnerListPhysicsMixin extends ScrollPhysics { 
+//   final void Function(ScrollMetrics, double) physicsListener;
 
-  _InnerListPhysicsMixin(this.physicsListener);
+//   _InnerListPhysicsMixin(this.physicsListener);
 
-} 
+// } 
 
 class BouncingInnerListPhysics extends BouncingScrollPhysics { 
   final void Function(ScrollMetrics position, double velocity) physicsListener;

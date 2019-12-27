@@ -1,7 +1,6 @@
 name: list_in_a_list
 description: A new flutter plugin project.
-version: 0.0.1
-author: Coen van Gruijthuijsen
+version: 0.0.1+2
 homepage: https://github.com/cgrain/ListInAList 
 
 environment:

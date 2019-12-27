@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:list_in_a_list/InnerControllers.dart';
 
 typedef InnerListWidgetBuilder = Widget Function(
@@ -25,7 +26,8 @@ class InnerListParam {
   ScrollController controller;
   InnerListPhysics physics;
   int itemCount;
-  /// [innerKey] is null in initialization. It makes no sense to create it at initialization because [this] is used  
+
+  /// [innerKey] is null in initialization. It makes no sense to create it at initialization because [this] is used
   /// for multiple listViews. Therefore, it should be managed by the outerWidget and potentially edited by the [InnerListBuilder]
   GlobalKey innerKey;
 
@@ -50,6 +52,15 @@ class AnimatedListParam extends InnerListParam {
             children: children,
             controller: controller,
             itemCount: itemCount);
+  AnimatedListParam deepCopy() {
+    return AnimatedListParam(
+      animatedItemBuilder: this.animatedItemBuilder,
+      physics: this.physics,
+      children: this.children,
+      controller: this.controller,
+      itemCount: this.itemCount,
+    );
+  }
 }
 
 /// ListInAList is a class that makes it easy to create a list in a list!
@@ -105,55 +116,106 @@ class ListInAList extends ListView {
 class AnimatedListInAList extends AnimatedList {
   /// When Dart updates, Update this to se we can use a typedef! i.e.
   /// typedef MapOfKeys = Map<int,GlobalKey<AnimatedListState>>;
-  final Map<int,GlobalKey<AnimatedListState>> keys;
+  final Map<int, GlobalKey<AnimatedListState>> keys;
+  VelocityCalculator velFunc;
+  AnimatedOuterBuilder outerBuilder;
+  AnimatedListParam param;
   AnimatedListInAList(
       {AnimatedListItemBuilder itemBuilder,
-      ScrollController controller,
+      @required  this.outerBuilder,
+      OuterScroll controller,
       int initialItemCount,
-      Map keys})
+      Map keys, this.velFunc, this.param})
       : keys = keys ?? Map(),
         super(
-            itemBuilder: itemBuilder,
+            itemBuilder: (_,__,___) => null, //THIS IS OVERRIDDEN
             controller: controller,
             initialItemCount: initialItemCount);
   factory AnimatedListInAList.doubleBuilder({
     @required AnimatedListParam param,
     @required AnimatedOuterBuilder outerBuilder,
-    @required VelocityCalculator velFunc,
-    Map<int,GlobalKey<AnimatedListState>> keys,
+    @required VelocityCalculator velFuncNew,
+    Map<int, GlobalKey<AnimatedListState>> keys,
     initialCount,
   }) {
     param = param ?? AnimatedListParam();
     keys = keys ?? Map<int, GlobalKey<AnimatedListState>>();
-    final controller = ScrollController();
-    final innerBuilder = (context, outerIndex, param) =>
-        AnimatedListInAList.innerListBuilder(outerIndex, param,keys,
-            (position, velocity) {
-          ScrollPositionWithSingleContext pos = controller.position;
-          double outerVel = velFunc(position, velocity);
-          if (controller.hasClients) pos.goBallistic(outerVel);
-        });
-    AnimatedListItemBuilder itemBuilder = (context, index, animation) {
-        param.innerKey = keys.putIfAbsent(index, () => GlobalKey<AnimatedListState>() );
-        
-        return outerBuilder(context, index, param, innerBuilder, animation);
-    };
+    final controller = OuterScroll();
     return AnimatedListInAList(
-      itemBuilder: itemBuilder,
+      itemBuilder: null,
+      outerBuilder: outerBuilder,
       controller: controller,
       initialItemCount: 5,
       keys: keys,
+      velFunc: velFuncNew,
+      param: param,
     );
+    
   }
-
-  static AnimatedList innerListBuilder(
-      int outerIndex, AnimatedListParam p, Map<int, dynamic> keys,innerListener) {
-        keys[outerIndex] = p.innerKey;
-    return AnimatedList(key: p.innerKey,
+  
+  OuterScroll controlNew() => controller;
+  void goBallistic(velocity) => controlNew().goBallistic(velocity);
+  @override
+  get itemBuilder => (context, index, animation) { 
+    final newParam = param.deepCopy();
+    print('BUILDING: ${controller.hashCode}');
+    final innerBuilder = (BuildContext context,int outerIndex, InnerListParam paramNew, {Key newKey} ) => 
+    AnimatedListInAList.innerListBuilder(outerIndex, paramNew, keys,
+            (position, velocity) {
+          double outerVel = velFunc(position, velocity);
+         goBallistic(outerVel);
+        }, newKey: newKey);
+    return outerBuilder(context, index, newParam,innerBuilder,animation );
+    };
+    
+  
+  static AnimatedList innerListBuilder(int outerIndex, AnimatedListParam p,
+      Map<int, dynamic> keys, innerListener,
+      {Key newKey}) {
+    if (newKey != null) keys[outerIndex] = newKey;
+    final key = newKey ??
+        keys.putIfAbsent(outerIndex, () => GlobalKey<AnimatedListState>());
+    return AnimatedList(
+        key: key,
         itemBuilder: (BuildContext context, int index, Animation animation) =>
             p.animatedItemBuilder(outerIndex, context, index, animation),
         controller: p.controller ?? ScrollController(),
         physics: ListInAList.innerphysics(p.physics, innerListener),
         initialItemCount: p.itemCount);
+  }
+  void listener(ScrollMetrics position, double velocity) { 
+    ScrollPositionWithSingleContext pos = controller.position;
+    final newVel = velFunc(position,velocity);
+    pos.goBallistic(newVel);
+  }
+}
+class OuterScroll extends ScrollController { 
+  void goBallistic(double velocity) { 
+    print('Go Ballistic: $hashCode');
+    if (!hasClients) return;
+    ScrollPositionWithSingleContext pos = position;
+pos.goBallistic(velocity);  }
+
+@override 
+void detach(ScrollPosition position) {
+    print("I am detaching!: $hashCode");
+    // TODO: implement detach
+    super.detach(position);
+  }
+  @override 
+  void dispose() {
+    print('I am disposed!: $hashCode');
+    // TODO: implement dispose
+    super.dispose();
+  }
+  @override 
+  void attach(ScrollPosition position) {
+    print("ATTACHING: $hashCode");
+    // TODO: implement attach
+    super.attach(position);
+  }
+  OuterScroll() : super() { 
+    print("CREATING: $hashCode");
+    
   }
 }
