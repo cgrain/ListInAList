@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:list_in_a_list/listInAList.dart';
+import 'package:list_in_a_list/list_in_a_list.dart';
 
 void main() => runApp(MyApp());
 
